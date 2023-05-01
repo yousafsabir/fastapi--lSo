@@ -1,27 +1,53 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from beanie import init_beanie
+from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import Field
+from datetime import datetime
+from beanie import Document
 
 app = FastAPI()
 
-class Msg(BaseModel):
-    msg: str
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_credentials=True,
+    allow_headers=["*"],
+)
+
+# ------------ App's main logic ---------------
+class Check(Document):
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    message: str
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World. Welcome to FastAPI!"}
+@app.on_event("startup")
+async def connect_to_db():
 
+    db = AsyncIOMotorClient("mongodb+srv://yousaf_project1:1214@cluster0.bzimi8z.mongodb.net/?retryWrites=true&w=majority").data
 
-@app.get("/path")
-async def demo_get():
-    return {"message": "This is /path endpoint, use a post request to transform the text to uppercase"}
+    await init_beanie(
+        database=db,
+        document_models=[
+            Check
+        ]
+    )
 
+    print("db connected")
 
-@app.post("/path")
-async def demo_post(inp: Msg):
-    return {"message": inp.msg.upper()}
+@app.get("/{message}")
+async def check_server(message: str):
+    return {
+        "message": "Server Is Working",
+        "content": f"your message was: {message}"
+}
 
-
-@app.get("/path/{path_id}")
-async def demo_get_path_id(path_id: int):
-    return {"message": f"This is /path/{path_id} endpoint, use post request to retrieve result"}
+@app.post("/{message}")
+async def add_message(message: str):
+    check_in = Check(message=message)
+    await check_in.save()
+    return {
+        "message": "Message Added",
+	"content": message
+    }
