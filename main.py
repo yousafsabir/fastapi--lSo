@@ -37,11 +37,12 @@ async def connect_to_db():
     print("db connected")
 
 @app.get("/{message}")
-async def check_server(message: str):
+async def check_server(message: str):    check_in = Check(message=message)
+    await check_in.save()
     return {
-        "message": "Server Is Working",
-        "content": f"your message was: {message}"
-}
+        "message": "Message Added",
+	"content": message
+    }
 
 @app.post("/{message}")
 async def add_message(message: str):
