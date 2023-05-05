@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import Field
+from typing import Optional
 from datetime import datetime
 from beanie import Document
 
@@ -37,18 +38,29 @@ async def connect_to_db():
     print("db connected")
 
 @app.get("/{message}")
-async def check_server(message: str):    check_in = Check(message=message)
-    await check_in.save()
-    return {
-        "message": "Message Added",
-	"content": message
-    }
+async def check_server(message: Optional[str] = None): 
+    if message:
+        check_in = Check(message=message)
+        await check_in.save()
+        return {
+            "message": "Message Added",
+	    "content": message
+        }
+    else:
+        return {
+            "message": "no message in request"
+        }
 
 @app.post("/{message}")
-async def add_message(message: str):
-    check_in = Check(message=message)
-    await check_in.save()
-    return {
-        "message": "Message Added",
-	"content": message
-    }
+async def add_message(message: Optional[str] = None):
+    if message:
+        check_in = Check(message=message)
+        await check_in.save()
+        return {
+            "message": "Message Added",
+	    "content": message
+        }
+    else:
+        return {
+            "message": "no message in request"
+        }
